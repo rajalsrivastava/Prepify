@@ -3,7 +3,8 @@
 import { auth, db } from "@/firebase/admin";
 import { cookies } from "next/headers";
 
-const ONE_WEEK = 60 * 60 * 24 * 7;
+//session duration 1 week
+const SESSION_DURATION = 60 * 60 * 24 * 7;
 
 export async function signUp(params: SignUpParams) {
   const { uid, name, email } = params;
@@ -29,6 +30,7 @@ export async function signUp(params: SignUpParams) {
     };
   } catch (error: any) {
     console.error("Error creating a user", error);
+
     if (error.code === "auth/email-already-exists") {
       return {
         success: false,
@@ -60,20 +62,27 @@ export async function signIn(params: SignInParams) {
 
     return {
       success: false,
-      message: "Failed to log into an account.",
+      message: "Failed to log into an account. Please try again.",
     };
   }
+}
+
+// Sign out user by clearing the session cookie
+export async function signOut() {
+  const cookieStore = await cookies();
+
+  cookieStore.delete("session");
 }
 
 export async function setSessionCookie(idToken: string) {
   const cookieStore = await cookies();
 
   const sessionCookie = await auth.createSessionCookie(idToken, {
-    expiresIn: ONE_WEEK * 1000,
+    expiresIn: SESSION_DURATION * 1000,
   });
 
   cookieStore.set("session", sessionCookie, {
-    maxAge: ONE_WEEK,
+    maxAge: SESSION_DURATION,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
@@ -117,4 +126,3 @@ export async function isAuthenticated() {
 
   return !!user;
 }
-

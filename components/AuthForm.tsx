@@ -115,7 +115,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
                 control={form.control}
                 name="name"
                 label="Name"
-                placeholder="Your name"
+                placeholder="Your Name"
               />
             )}
 
@@ -131,7 +131,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
               control={form.control}
               name="password"
               label="Password"
-              placeholder="Ener your password"
+              placeholder="Enter your password"
               type="password"
             />
 
@@ -145,7 +145,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
           {isSignIn ? "No account yet?" : "Already have an account?"}
           <Link
             href={!isSignIn ? "/sign-in" : "/sign-up"}
-            className="font-bold text-user-primary ml-10"
+            className="font-bold text-user-primary ml-1"
           >
             {!isSignIn ? "Sign In" : "Sign Up"}
           </Link>

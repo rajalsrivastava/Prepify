@@ -18,8 +18,8 @@ export async function getInterviewsByUserId(
     ...doc.data(),
   })) as Interview[];
 }
-export async function getInterviewById(id: string): Promise<Interview | null> {
-  const interview = await db.collection("interviews").doc(id).get();
+export async function getInterviewById(interviewId: string): Promise<Interview | null> {
+  const interview = await db.collection("interviews").doc(interviewId).get();
 
   return interview.data() as Interview | null;
 }
@@ -28,6 +28,7 @@ export async function getLatestInterviews(
   params: GetLatestInterviewsParams
 ): Promise<Interview[] | null> {
   const { userId, limit = 20 } = params;
+
   const interviews = await db
     .collection("interviews")
     .orderBy("createdAt", "desc")
@@ -43,7 +44,7 @@ export async function getLatestInterviews(
 }
 
 export async function createFeedback(params: CreateFeedbackParams) {
-  const { interviewId, userId, transcript } = params;
+  const { interviewId, userId, transcript, feedbackId } = params;
 
   try {
     const formattedTranscript = transcript
@@ -53,15 +54,7 @@ export async function createFeedback(params: CreateFeedbackParams) {
       )
       .join("");
 
-    const {
-      object: {
-        totalScore,
-        categoryScores,
-        strengths,
-        areasForImprovement,
-        finalAssessment,
-      },
-    } = await generateObject({
+    const { object } = await generateObject({
       model: google("gemini-2.0-flash-001", {
         structuredOutputs: false,
       }),
@@ -82,23 +75,33 @@ export async function createFeedback(params: CreateFeedbackParams) {
         "You are a professional interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories",
     });
 
-    const feedback = await db.collection("feedback").add({
-      interviewId,
-      userId,
-      totalScore,
-      categoryScores,
-      strengths,
-      areasForImprovement,
-      finalAssessment,
+    const feedback = {
+      interviewId: interviewId,
+      userId: userId,
+      totalScore: object.totalScore,
+      categoryScores: object.categoryScores,
+      strengths: object.strengths,
+      areasForImprovement: object.areasForImprovement,
+      finalAssessment: object.finalAssessment,
       createdAt: new Date().toISOString(),
-    });
+    };
+
+    let feedbackRef;
+
+    if (feedbackId) {
+      feedbackRef = db.collection("feedback").doc(feedbackId);
+    } else {
+      feedbackRef = db.collection("feedback").doc();
+    }
+
+    await feedbackRef.set(feedback);
 
     return {
       success: true,
-      feedbackId: feedback.id,
+      feedbackId: feedbackRef.id,
     };
   } catch (error) {
-    console.log("Error saving feedback", error);
+    console.error("Error saving feedback", error);
     return { sucess: false };
   }
 }
