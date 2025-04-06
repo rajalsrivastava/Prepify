@@ -45,3 +45,9 @@ export const getRandomInterviewCover = () => {
   const randomIndex = Math.floor(Math.random() * interviewCovers.length);
   return `/covers${interviewCovers[randomIndex]}`;
 };
+
+const isDev = process.env.NODE_ENV === "development";
+
+export const ORIGIN_URL = isDev
+  ? "http://localhost:3000"
+  : "https://prepify-ai.vercel.app";
